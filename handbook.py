@@ -14,6 +14,8 @@ NOTE: We do not expect you to come up with a perfect solution. We are more inter
 in how you would approach a problem like this.
 """
 import json
+import re # regular expression
+from test_handbook import *
 
 # NOTE: DO NOT EDIT conditions.json
 with open("./conditions.json") as f:
@@ -30,9 +32,89 @@ def is_unlocked(courses_list, target_course):
     You can assume all courses are worth 6 units of credit
     """
     
-    # TODO: COMPLETE THIS FUNCTION!!!
+    # working:
+    # example courses_list = ["COMP9417", "COMP9418", "COMP9447"]
+    # example prepreq_str = "COMP1511    or DPST1091 or COMP1911 or COMP1917"
+    # empty case
+    # single case
+    # AND, OR
+    # ...
+
+    prereq_str = CONDITIONS[target_course].upper() # make all upper case
+
+    allowed = is_unlocked_2(courses_list, prereq_str) # can recur
+
+    print("Returned " + str(allowed) + " for target course " + target_course, end="\n\n")
+    return allowed
+
+
+def is_unlocked_2(courses_list, prereqs):
+
+    allowed = False
+
+    # empty case ""
+    if prereqs == "":
+        return True
+
+    # composite (or,and) case, prioritise smaller index
+
+    i = prereqs.find("OR")
+    j = prereqs.find("AND")
+    op = ""
+    print("Prereq String: " + prereqs)
+    print("i (or-index), j (and-index)]: " + str(i) + ", " + str(j))
+
+    if i != -1 and j != -1:
+        if i < j:
+            op = "OR"
+            index = i
+        elif j < i:
+            op = "AND"
+            index = j
+            
+    elif i != -1 and j == -1:
+        op = "OR"
+        index = i
+    elif i == -1 and j != -1:
+        op = "AND"
+        index = j
+    else: # both -1, no logical operations remaining
+        # singular case, e.g. "COMP4337"
+        immediate = re.search(r"....(\d+)", prereqs).group()
+        return (immediate in courses_list)
     
-    return True
+    immediate, remainder = partition(prereqs, index , op)
+        
+    if op == "OR":
+        if (immediate in courses_list):
+            allowed = True
+        else:
+            allowed = is_unlocked_2(courses_list, remainder)
+    else:
+        if (immediate not in courses_list):
+            allowed = False
+        else:
+            allowed = is_unlocked_2(courses_list, remainder)
+        
+    return allowed
+
+
+def partition(string, i, op):
+
+    print("Searching: " + string[:i])
+
+    immediate = re.search(r"....(\d+)", string[:i]).group()
+    remainder = string[i+3:]
+    if op == 'OR':
+        print("Concluded: " + immediate + " [OR] " + remainder + '\n')
+    elif op == 'AND':
+        print("Concluded: " + immediate + " [AND] " + remainder + '\n')
+    return [immediate, remainder]
+
+if __name__ == "__main__":
+    test_empty()
+    test_single()
+    test_compound()
 
 
 
